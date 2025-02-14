@@ -1,0 +1,202 @@
+{
+  "/home/leandro/Desktop/serverless/serverless.yml": {
+    "versionFramework": "4.6.2",
+    "servicePath": "/home/leandro/Desktop/serverless/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "serverless-api",
+      "app": "eccomerce",
+      "plugins": [
+        "serverless-offline"
+      ],
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "region": "us-east-1",
+        "environment": {
+          "BUCKET_NAME": "my-serverless-bucket",
+          "PRODUCTS_TABLE": "ProductsTable",
+          "SNS_TOPIC": "UserNotifications",
+          "SQS_QUEUE": "ProductQueue",
+          "USERS_TABLE": "UsersTable"
+        }
+      },
+      "resources": {
+        "Resources": {
+          "ProductQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "ProductQueue"
+            }
+          },
+          "ProductsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "ProductsTable",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "productId",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "productId",
+                  "KeyType": "HASH"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST"
+            }
+          },
+          "UsersTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "UsersTable",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "userId",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "userId",
+                  "KeyType": "HASH"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST"
+            }
+          },
+          "UserNotifications": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "TopicName": "UserNotifications"
+            }
+          },
+          "SnsSubscription": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+              "TopicArn": {
+                "Ref": "UserNotifications"
+              },
+              "Protocol": "email",
+              "Endpoint": "lean4339@gmail.com"
+            }
+          }
+        }
+      },
+      "functions": {
+        "register": {
+          "handler": "handlers/users.register",
+          "events": [
+            {
+              "http": {
+                "path": "users/register",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "login": {
+          "handler": "handlers/users.login",
+          "events": [
+            {
+              "http": {
+                "path": "users/login",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "createProduct": {
+          "handler": "handlers/products.createProduct",
+          "events": [
+            {
+              "http": {
+                "path": "products",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "listProducts": {
+          "handler": "handlers/products.listProducts",
+          "events": [
+            {
+              "http": {
+                "path": "products",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "sendNotification": {
+          "handler": "handlers/notifications.sendNotification",
+          "events": [
+            {
+              "http": {
+                "path": "notifications",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "uploadImage": {
+          "handler": "handlers/upload.uploadImage",
+          "events": [
+            {
+              "http": {
+                "path": "upload",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "processProductQueue": {
+          "handler": "handlers/sqsProcessor.processProductQueue",
+          "events": [
+            {
+              "sqs": {
+                "arn": {
+                  "Fn::GetAtt": [
+                    "ProductQueue",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "region": "us-east-1",
+      "environment": {
+        "BUCKET_NAME": "my-serverless-bucket",
+        "PRODUCTS_TABLE": "ProductsTable",
+        "SNS_TOPIC": "UserNotifications",
+        "SQS_QUEUE": "ProductQueue",
+        "USERS_TABLE": "UsersTable"
+      }
+    },
+    "serviceRawFile": "service: serverless-api\n\n\n\n# \"app\" enables Serverless Framework Dashboard features and sharing them with other Services.\napp: eccomerce\n\nplugins:\n  - serverless-offline\n\nprovider:\n  name: aws\n  runtime: nodejs18.x\n  region: us-east-1\n  environment:\n    BUCKET_NAME: my-serverless-bucket\n    PRODUCTS_TABLE: ProductsTable\n    SNS_TOPIC: UserNotifications\n    SQS_QUEUE: ProductQueue\n    USERS_TABLE: UsersTable\n\nresources:\n  Resources:\n    ProductQueue:\n      Type: AWS::SQS::Queue\n      Properties:\n        QueueName: ProductQueue\n\n    ProductsTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: ProductsTable\n        AttributeDefinitions:\n          - AttributeName: productId\n            AttributeType: S\n        KeySchema:\n          - AttributeName: productId\n            KeyType: HASH\n        BillingMode: PAY_PER_REQUEST\n\n    UsersTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: UsersTable\n        AttributeDefinitions:\n          - AttributeName: userId\n            AttributeType: S\n        KeySchema:\n          - AttributeName: userId\n            KeyType: HASH\n        BillingMode: PAY_PER_REQUEST\n\n    UserNotifications:\n      Type: AWS::SNS::Topic\n      Properties:\n        TopicName: UserNotifications\n\n    SnsSubscription:\n      Type: AWS::SNS::Subscription\n      Properties:\n        TopicArn: !Ref UserNotifications\n        Protocol: email\n        Endpoint: lean4339@gmail.com\n\nfunctions:\n  register:\n    handler: handlers/users.register\n    events:\n      - http:\n          path: users/register\n          method: post\n          cors: true\n\n  login:\n    handler: handlers/users.login\n    events:\n      - http:\n          path: users/login\n          method: post\n          cors: true\n\n  createProduct:\n    handler: handlers/products.createProduct\n    events:\n      - http:\n          path: products\n          method: post\n          cors: true\n\n  listProducts:\n    handler: handlers/products.listProducts\n    events:\n      - http:\n          path: products\n          method: get\n          cors: true\n\n  sendNotification:\n    handler: handlers/notifications.sendNotification\n    events:\n      - http:\n          path: notifications\n          method: post\n          cors: true\n\n  uploadImage:\n    handler: handlers/upload.uploadImage\n    events:\n      - http:\n          path: upload\n          method: post\n          cors: true\n\n  processProductQueue:\n    handler: handlers/sqsProcessor.processProductQueue\n    events:\n      - sqs:\n          arn:\n            Fn::GetAtt:\n              - ProductQueue\n              - Arn\n",
+    "command": [],
+    "options": {
+      "template": "aws-nodejs",
+      "path": "mi-proyecto-serverless"
+    },
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}
