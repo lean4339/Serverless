@@ -1,5 +1,4 @@
 .env
 node_modules
 .serverlesss
-serverlesss.yml
 package-lock.json
